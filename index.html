@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Away Note - 부재중 화면 안내</title>
+  <meta name="description" content="회사나 사무실에서 자리를 비웠을 때 일정, 복귀 예정 시간, 카운트다운을 아름다운 그라데이션 애니메이션으로 보여주는 부재중 안내 앱">
+  <!-- Google Fonts & Pretendard -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Outfit:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+  <!-- Lucide Icons (CDN) -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="theme-aurora">
+  <div id="app">
+    <!-- ========================================== -->
+    <!-- 1. SETUP VIEW (설정 화면)                 -->
+    <!-- ========================================== -->
+    <main id="setup-view" class="view active">
+      <div class="background-decor">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+      </div>
+
+      <div class="setup-container">
+        <!-- Header -->
+        <header class="setup-header">
+          <div class="brand">
+            <div class="brand-icon">
+              <i data-lucide="clock"></i>
+            </div>
+            <div>
+              <h1>Away Note</h1>
+              <p>자리를 비울 때 스마트하고 아름다운 화면 안내</p>
+            </div>
+          </div>
+          <div class="current-time-badge">
+            <i data-lucide="sun"></i>
+            <span id="setup-clock">10:00:00 AM</span>
+          </div>
+        </header>
+
+        <form id="setup-form" onsubmit="return false;">
+          <!-- Card 1: 일정 (부재 사유) -->
+          <section class="form-card">
+            <div class="card-header">
+              <div class="card-step">1</div>
+              <h2>일정 / 부재 사유 입력 <span class="required">*</span></h2>
+            </div>
+            
+            <div class="input-group">
+              <div class="input-wrapper">
+                <i data-lucide="briefcase" class="input-icon"></i>
+                <input type="text" id="input-title" placeholder="예: 팀 주간 회의 중, 점심 식사" maxlength="40" required autofocus>
+              </div>
+            </div>
+
+            <!-- Quick Schedule Chips -->
+            <div class="preset-section">
+              <span class="preset-label">자주 쓰는 일정:</span>
+              <div class="chip-group" id="schedule-chips">
+                <button type="button" class="chip" data-value="회의 중">💻 회의 중</button>
+                <button type="button" class="chip" data-value="티 타임">☕ 티 타임</button>
+                <button type="button" class="chip" data-value="운동 중">🏃 운동 중</button>
+                <button type="button" class="chip" data-value="병원 방문">🏥 병원 방문</button>
+                <button type="button" class="chip" data-value="집중 업무">🎧 집중 업무</button>
+              </div>
+            </div>
+          </section>
+
+          <!-- Card 2: 돌아오는 시간 (복귀 예정 시각) -->
+          <section class="form-card">
+            <div class="card-header">
+              <div class="card-step">2</div>
+              <h2>돌아오는 시간 선택 <span class="required">*</span></h2>
+            </div>
+
+            <div class="return-time-layout">
+              <!-- Mode Selection: Quick Minutes vs Exact Time -->
+              <div class="time-mode-tabs">
+                <button type="button" class="mode-tab active" data-mode="quick">
+                  <i data-lucide="timer"></i> N분 후 복귀
+                </button>
+                <button type="button" class="mode-tab" data-mode="exact">
+                  <i data-lucide="clock-4"></i> 지정 시각 복귀
+                </button>
+              </div>
+
+              <!-- Quick Mode Container -->
+              <div id="quick-time-container" class="time-container active">
+                <div class="quick-duration-grid">
+                  <button type="button" class="duration-btn" data-minutes="10">+10분</button>
+                  <button type="button" class="duration-btn active" data-minutes="15">+15분</button>
+                  <button type="button" class="duration-btn" data-minutes="30">+30분</button>
+                  <button type="button" class="duration-btn" data-minutes="45">+45분</button>
+                  <button type="button" class="duration-btn" data-minutes="60">+1시간</button>
+                  <button type="button" class="duration-btn" data-minutes="90">+1.5시간</button>
+                </div>
+              </div>
+
+              <!-- Exact Mode Container -->
+              <div id="exact-time-container" class="time-container">
+                <div class="input-wrapper">
+                  <i data-lucide="alarm-clock" class="input-icon"></i>
+                  <input type="time" id="input-exact-time">
+                </div>
+              </div>
+
+              <!-- Computed Preview -->
+              <div class="computed-preview">
+                <i data-lucide="sparkles"></i>
+                <span>예상 복귀 시간: <strong id="preview-return-time">10:55 AM</strong> (<span id="preview-duration">15분 남음</span>)</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- Card 3: 기타 안내 문구 -->
+          <section class="form-card">
+            <div class="card-header">
+              <div class="card-step">3</div>
+              <h2>기타 안내 문구</h2>
+            </div>
+
+            <div class="input-group">
+              <div class="input-wrapper">
+                <i data-lucide="message-square" class="input-icon"></i>
+                <input type="text" id="input-note" placeholder="예: 급한 건은 카톡이나 전화 부탁드립니다." maxlength="60">
+              </div>
+            </div>
+
+            <!-- Quick Note Chips -->
+            <div class="preset-section">
+              <span class="preset-label">자주 쓰는 문구:</span>
+              <div class="chip-group" id="note-chips">
+                <button type="button" class="chip" data-value="급한 건은 전화 부탁드립니다.">📞 급한 건은 전화</button>
+                <button type="button" class="chip" data-value="카톡 메시지 확인 가능합니다.">💬 카톡 메시지 확인 가능</button>
+                <button type="button" class="chip" data-value="Teams 메시지 확인 가능합니다.">💻 Teams 문의 가능</button>
+              </div>
+            </div>
+          </section>
+
+          <!-- Card 4: 그라데이션 애니메이션 테마 선택 -->
+          <section class="form-card">
+            <div class="card-header">
+              <div class="card-step">4</div>
+              <h2>그라데이션 테마 선택</h2>
+            </div>
+
+            <div class="theme-selector-grid">
+              <label class="theme-card active">
+                <input type="radio" name="theme" value="theme-aurora" checked>
+                <div class="theme-preview aurora-bg"></div>
+                <div class="theme-info">
+                  <span class="theme-name">오로라 (Aurora)</span>
+                  <span class="theme-desc">보랏빛과 시안의 몽환적 물결</span>
+                </div>
+              </label>
+
+              <label class="theme-card">
+                <input type="radio" name="theme" value="theme-sunset">
+                <div class="theme-preview sunset-bg"></div>
+                <div class="theme-info">
+                  <span class="theme-name">노을 (Sunset Ember)</span>
+                  <span class="theme-desc">따뜻한 오렌지와 로즈 핑크</span>
+                </div>
+              </label>
+
+              <label class="theme-card">
+                <input type="radio" name="theme" value="theme-cosmic">
+                <div class="theme-preview cosmic-bg"></div>
+                <div class="theme-info">
+                  <span class="theme-name">딥 스페이스 (Deep Space)</span>
+                  <span class="theme-desc">신비로운 네이비와 인디고</span>
+                </div>
+              </label>
+
+              <label class="theme-card">
+                <input type="radio" name="theme" value="theme-emerald">
+                <div class="theme-preview emerald-bg"></div>
+                <div class="theme-info">
+                  <span class="theme-name">에메랄드 (Emerald Wave)</span>
+                  <span class="theme-desc">싱그러운 청록색과 그린 앰비언트</span>
+                </div>
+              </label>
+
+              <label class="theme-card">
+                <input type="radio" name="theme" value="theme-cyber">
+                <div class="theme-preview cyber-bg"></div>
+                <div class="theme-info">
+                  <span class="theme-name">네온 퓨처 (Neon Cyber)</span>
+                  <span class="theme-desc">강렬한 핫핑크와 네온 블루</span>
+                </div>
+              </label>
+            </div>
+          </section>
+
+          <!-- Start Action Button -->
+          <div class="action-footer">
+            <button type="submit" id="btn-start-away" class="start-btn">
+              <span class="btn-glow"></span>
+              <span class="btn-content">
+                <i data-lucide="play" class="btn-icon"></i>
+                부재중 화면 시작하기
+              </span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </main>
+
+    <!-- ========================================== -->
+    <!-- 2. AWAY DISPLAY VIEW (부재중 표출 화면)      -->
+    <!-- ========================================== -->
+    <section id="away-view" class="view">
+      <!-- Animated Mesh Gradient Canvas/Background -->
+      <div class="canvas-mesh-container">
+        <div class="mesh-ball ball-1"></div>
+        <div class="mesh-ball ball-2"></div>
+        <div class="mesh-ball ball-3"></div>
+        <div class="mesh-ball ball-4"></div>
+        <div class="glass-overlay"></div>
+      </div>
+
+      <!-- Top Utility Controls Bar -->
+      <header class="away-top-bar">
+
+        <div class="away-meta-clock">
+          <i data-lucide="clock"></i>
+          <span id="away-current-time">10:36:14 AM</span>
+        </div>
+
+        <div class="away-controls">
+          <button type="button" id="btn-toggle-fullscreen" class="icon-btn" title="전체 화면 (F11)">
+            <i data-lucide="maximize"></i>
+          </button>
+          <button type="button" id="btn-exit-away" class="exit-btn" title="설정 화면으로 돌아가기 (ESC)">
+            <i data-lucide="log-out"></i>
+            <span>돌아가기 (ESC)</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Main Content Container -->
+      <main class="away-main-content">
+        <!-- MAIN SCHEDULE: Largest typography requirement! -->
+        <h1 id="display-title" class="huge-schedule-title">
+          팀 주간 회의 중
+        </h1>
+
+        <!-- Time & Countdown Section -->
+        <div class="time-card-wrapper">
+          <div class="return-time-badge">
+            <i data-lucide="calendar-clock"></i>
+            <span>복귀 예정 시간 : <strong id="display-return-time">14:30</strong></span>
+          </div>
+
+          <!-- Countdown Counter -->
+          <div class="countdown-container">
+            <span class="countdown-label">복귀까지 남은 시간</span>
+            <div id="countdown-timer" class="countdown-timer">
+              <div class="time-unit">
+                <span id="timer-hours" class="time-val">00</span>
+                <span class="time-label">시간</span>
+              </div>
+              <span class="colon">:</span>
+              <div class="time-unit">
+                <span id="timer-minutes" class="time-val">15</span>
+                <span class="time-label">분</span>
+              </div>
+              <span class="colon">:</span>
+              <div class="time-unit">
+                <span id="timer-seconds" class="time-val">42</span>
+                <span class="time-label">초</span>
+              </div>
+            </div>
+            
+            <!-- Time Up Overdue Banner (Hidden initially) -->
+            <div id="timeup-banner" class="timeup-banner hidden">
+              <i data-lucide="bell-ring" class="timeup-icon"></i>
+              <span>복귀 예정 시간이 되었습니다! 곧 복귀합니다.</span>
+              <div id="overdue-counter" class="overdue-counter">(초과 +00:00)</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Additional Note / Message -->
+        <div id="display-note-wrapper" class="note-card-wrapper">
+          <div class="note-pill">
+            <span id="display-note">급한 건은 카톡이나 전화 부탁드립니다.</span>
+          </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="progress-bar-container">
+          <div id="away-progress-bar" class="progress-bar-fill" style="width: 45%;"></div>
+        </div>
+      </main>
+
+    </section>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
